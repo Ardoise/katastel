@@ -1,0 +1,28 @@
+
+
+case $OP in
+  verify )
+    cmd='gpg --verify myfile.asc myfile';
+    ;;
+  import )
+    cmd='gpg --import DE885DD3';
+    cmd='gpg --keyserver pgpkeys.mit.edu --recv-key DE885DD3';
+    cmd='gpg --fingerprint DE885DD3';
+    ;;
+  lsdlnkjenerjslkren )
+    pgpk -a KEYS
+    pgpv myfile.asc
+
+    pgp -ka KEYS
+    pgp myfile.asc
+
+    Users: pgp < KEYS
+       gpg --import KEYS
+Developers: 
+        pgp -kxa <your name> and append it to this file.
+        (pgpk -ll <your name> && pgpk -xa <your name>) >> this file.
+        (gpg --list-sigs <your name>
+             && gpg --armor --export <your name>) >> this file.
+
+    ;;
+esac
