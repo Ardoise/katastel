@@ -1,0 +1,42 @@
+case "$1" in
+  'file' )
+cat <<EOF
+##Maximum File Handles
+/etc/security/limits.conf
+*  hard  nofile  50000
+*  soft  nofile  50000
+EOF
+  ;;
+
+  'nproc'|'thread' )
+cat <<EOF
+##Maximum Forked Processes
+/etc/security/limits.conf
+*  hard  nproc  10000
+*  soft  nproc  10000
+
+/etc/security/limits.d/90-nproc.conf
+*  soft  nproc  10000
+EOF
+  ;;
+
+
+  'socket' )
+cat <<'EOF'
+##Increase the number of TCP socket ports available
+### This is particularly important if your flow will be setting up and tearing down a large number of sockets in small period of time.
+sudo sysctl -w net.ipv4.ip_local_port_range="10000 65000"
+### Set how long sockets stay in a TIMED_WAIT state when closed
+sudo sysctl -w net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait="1"
+EOF
+  ;;
+
+  'swap' )
+cat <<'EOF'
+##Tell Linux you never want NiFi to swap
+/etc/sysctl.conf
+vm.swappiness = 0
+EOF
+  ;;
+
+esac
