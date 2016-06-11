@@ -130,118 +130,117 @@ locateJava() {
 }
 
 init() {
-    # Determine if there is special OS handling we must perform
-    detectOS
+  # Determine if there is special OS handling we must perform
+  detectOS
 
-    # Unlimit the number of file descriptors if possible
-    unlimitFD
+  # Unlimit the number of file descriptors if possible
+  unlimitFD
 
-    # Locate the Java VM to execute
-    locateJava "$1"
+  # Locate the Java VM to execute
+  locateJava "$1"
 }
 
 
 install() {
-        SVC_NAME=nifi
-        if [ "x$2" != "x" ] ; then
-                SVC_NAME=$2
-        fi
+  SVC_NAME=nifi
+  if [ "x$2" != "x" ] ; then
+          SVC_NAME=$2
+  fi
 
-        SVC_FILE="/etc/init.d/${SVC_NAME}"
-        cp "$0" "${SVC_FILE}"
-        sed -i s:NIFI_HOME=.*:NIFI_HOME="${NIFI_HOME}": "${SVC_FILE}"
-        sed -i s:PROGNAME=.*:PROGNAME="${SCRIPT_NAME}": "${SVC_FILE}"
-        rm -f "/etc/rc2.d/S65${SVC_NAME}"
-        ln -s "/etc/init.d/${SVC_NAME}" "/etc/rc2.d/S65${SVC_NAME}"
-        rm -f "/etc/rc2.d/K65${SVC_NAME}"
-        ln -s "/etc/init.d/${SVC_NAME}" "/etc/rc2.d/K65${SVC_NAME}"
-        echo "Service ${SVC_NAME} installed"
+  SVC_FILE="/etc/init.d/${SVC_NAME}"
+  cp "$0" "${SVC_FILE}"
+  sed -i s:NIFI_HOME=.*:NIFI_HOME="${NIFI_HOME}": "${SVC_FILE}"
+  sed -i s:PROGNAME=.*:PROGNAME="${SCRIPT_NAME}": "${SVC_FILE}"
+  rm -f "/etc/rc2.d/S65${SVC_NAME}"
+  ln -s "/etc/init.d/${SVC_NAME}" "/etc/rc2.d/S65${SVC_NAME}"
+  rm -f "/etc/rc2.d/K65${SVC_NAME}"
+  ln -s "/etc/init.d/${SVC_NAME}" "/etc/rc2.d/K65${SVC_NAME}"
+  echo "Service ${SVC_NAME} installed"
 }
 
 
 run() {
-    BOOTSTRAP_CONF_DIR="${NIFI_HOME}/conf"
-    BOOTSTRAP_CONF="${BOOTSTRAP_CONF_DIR}/bootstrap.conf";
-    BOOTSTRAP_LIBS="${NIFI_HOME}/lib/bootstrap/*"
+  BOOTSTRAP_CONF_DIR="${NIFI_HOME}/conf"
+  BOOTSTRAP_CONF="${BOOTSTRAP_CONF_DIR}/bootstrap.conf";
+  BOOTSTRAP_LIBS="${NIFI_HOME}/lib/bootstrap/*"
 
-    run_as=$(grep run.as "${BOOTSTRAP_CONF}" | cut -d'=' -f2)
-    # If the run as user is the same as that starting the process, ignore this configuration
-    if [ "$run_as" = "$(whoami)" ]; then
-        unset run_as
-    fi
+  run_as=$(grep run.as "${BOOTSTRAP_CONF}" | cut -d'=' -f2)
+  # If the run as user is the same as that starting the process, ignore this configuration
+  if [ "$run_as" = "$(whoami)" ]; then
+      unset run_as
+  fi
 
-    sudo_cmd_prefix=""
-    if $cygwin; then
-        if [ -n "${run_as}" ]; then
-            echo "The run.as option is not supported in a Cygwin environment. Exiting."
-            exit 1
-        fi;
+  sudo_cmd_prefix=""
+  if $cygwin; then
+      if [ -n "${run_as}" ]; then
+          echo "The run.as option is not supported in a Cygwin environment. Exiting."
+          exit 1
+      fi;
 
-        NIFI_HOME=$(cygpath --path --windows "${NIFI_HOME}")
-        BOOTSTRAP_CONF=$(cygpath --path --windows "${BOOTSTRAP_CONF}")
-        BOOTSTRAP_CONF_DIR=$(cygpath --path --windows "${BOOTSTRAP_CONF_DIR}")
-        BOOTSTRAP_LIBS=$(cygpath --path --windows "${BOOTSTRAP_LIBS}")
-        BOOTSTRAP_CLASSPATH="${BOOTSTRAP_CONF_DIR};${BOOTSTRAP_LIBS}"
-        if [ -n "${TOOLS_JAR}" ]; then
-            TOOLS_JAR=$(cygpath --path --windows "${TOOLS_JAR}")
-            BOOTSTRAP_CLASSPATH="${TOOLS_JAR};${BOOTSTRAP_CLASSPATH}"
-        fi
-    else
-        if [ -n "${run_as}" ]; then
-            if id -u "${run_as}" >/dev/null 2>&1; then
-                sudo_cmd_prefix="sudo -u ${run_as}"
-            else
-                echo "The specified run.as user ${run_as} does not exist. Exiting."
-                exit 1
-            fi
-        fi;
-        BOOTSTRAP_CLASSPATH="${BOOTSTRAP_CONF_DIR}:${BOOTSTRAP_LIBS}"
-        if [ -n "${TOOLS_JAR}" ]; then
-            BOOTSTRAP_CLASSPATH="${TOOLS_JAR}:${BOOTSTRAP_CLASSPATH}"
-        fi
-    fi
+      NIFI_HOME=$(cygpath --path --windows "${NIFI_HOME}")
+      BOOTSTRAP_CONF=$(cygpath --path --windows "${BOOTSTRAP_CONF}")
+      BOOTSTRAP_CONF_DIR=$(cygpath --path --windows "${BOOTSTRAP_CONF_DIR}")
+      BOOTSTRAP_LIBS=$(cygpath --path --windows "${BOOTSTRAP_LIBS}")
+      BOOTSTRAP_CLASSPATH="${BOOTSTRAP_CONF_DIR};${BOOTSTRAP_LIBS}"
+      if [ -n "${TOOLS_JAR}" ]; then
+          TOOLS_JAR=$(cygpath --path --windows "${TOOLS_JAR}")
+          BOOTSTRAP_CLASSPATH="${TOOLS_JAR};${BOOTSTRAP_CLASSPATH}"
+      fi
+  else
+      if [ -n "${run_as}" ]; then
+          if id -u "${run_as}" >/dev/null 2>&1; then
+              sudo_cmd_prefix="sudo -u ${run_as}"
+          else
+              echo "The specified run.as user ${run_as} does not exist. Exiting."
+              exit 1
+          fi
+      fi;
+      BOOTSTRAP_CLASSPATH="${BOOTSTRAP_CONF_DIR}:${BOOTSTRAP_LIBS}"
+      if [ -n "${TOOLS_JAR}" ]; then
+          BOOTSTRAP_CLASSPATH="${TOOLS_JAR}:${BOOTSTRAP_CLASSPATH}"
+      fi
+  fi
 
-    echo
-    echo "Java home: ${JAVA_HOME}"
-    echo "NiFi home: ${NIFI_HOME}"
-    echo
-    echo "Bootstrap Config File: ${BOOTSTRAP_CONF}"
-    echo
+  echo
+  echo "Java home: ${JAVA_HOME}"
+  echo "NiFi home: ${NIFI_HOME}"
+  echo
+  echo "Bootstrap Config File: ${BOOTSTRAP_CONF}"
+  echo
 
-    # run 'start' in the background because the process will continue to run, monitoring NiFi.
-    # all other commands will terminate quickly so want to just wait for them
-    if [ "$1" = "start" ]; then
-        (cd "${NIFI_HOME}" && ${sudo_cmd_prefix} "${JAVA}" -cp "${BOOTSTRAP_CLASSPATH}" -Xms12m -Xmx24m -Dorg.apache.nifi.bootstrap.config.file="${BOOTSTRAP_CONF}" org.apache.nifi.bootstrap.RunNiFi $@ &)
-    else
-        (cd "${NIFI_HOME}" && ${sudo_cmd_prefix} "${JAVA}" -cp "${BOOTSTRAP_CLASSPATH}" -Xms12m -Xmx24m -Dorg.apache.nifi.bootstrap.config.file="${BOOTSTRAP_CONF}" org.apache.nifi.bootstrap.RunNiFi $@)
-    fi
+  # run 'start' in the background because the process will continue to run, monitoring NiFi.
+  # all other commands will terminate quickly so want to just wait for them
+  if [ "$1" = "start" ]; then
+      (cd "${NIFI_HOME}" && ${sudo_cmd_prefix} "${JAVA}" -cp "${BOOTSTRAP_CLASSPATH}" -Xms12m -Xmx24m -Dorg.apache.nifi.bootstrap.config.file="${BOOTSTRAP_CONF}" org.apache.nifi.bootstrap.RunNiFi $@ &)
+  else
+      (cd "${NIFI_HOME}" && ${sudo_cmd_prefix} "${JAVA}" -cp "${BOOTSTRAP_CLASSPATH}" -Xms12m -Xmx24m -Dorg.apache.nifi.bootstrap.config.file="${BOOTSTRAP_CONF}" org.apache.nifi.bootstrap.RunNiFi $@)
+  fi
 
-    # Wait just a bit (3 secs) to wait for the logging to finish and then echo a new-line.
-    # We do this to avoid having logs spewed on the console after running the command and then not giving
-    # control back to the user
-    sleep 3
-    echo
+  # Wait just a bit (3 secs) to wait for the logging to finish and then echo a new-line.
+  # We do this to avoid having logs spewed on the console after running the command and then not giving
+  # control back to the user
+  sleep 3
+  echo
 }
 
 main() {
-    init "$1"
-    run "$@"
+  init "$1"
+  run "$@"
 }
 
-
 case "$1" in
-    install)
-        install "$@"
-        ;;
-    start|stop|run|status|dump|env)
-        main "$@"
-        ;;
-    restart)
-        init
+  install)
+    install "$@"
+    ;;
+  start|stop|run|status|dump|env)
+    main "$@"
+    ;;
+  restart)
+    init
     run "stop"
     run "start"
+  ;;
+  *)
+    echo "Usage nifi {start|stop|run|restart|status|dump|install}"
     ;;
-    *)
-        echo "Usage nifi {start|stop|run|restart|status|dump|install}"
-        ;;
 esac
