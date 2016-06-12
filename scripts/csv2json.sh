@@ -16,8 +16,8 @@ init() {
   ##;
 }
 run() {
-  LOGSTASH_INPUTS_DIR="${KATASTEL_HOME}/inputs";
-  LOGSTASH_OUTPUTS_DIR="${KATASTEL_HOME}/outputs";
+  LOGSTASH_INPUTS_DIR="${KATASTEL_HOME}/input";
+  LOGSTASH_OUTPUTS_DIR="${KATASTEL_HOME}/output";
   LOGSTASH_PROCESS_DIR="${KATASTEL_HOME}/process";
   ##;
 }

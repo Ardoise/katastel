@@ -19,6 +19,7 @@
 - [Export Control](#export-control)
 
 ## Features
+* play book with Logstash
 
 ## Requirements
 * JDK 1.7 or higher
