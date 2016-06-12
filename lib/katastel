@@ -1,0 +1,3 @@
+[ -f /etc/default/katastel ] && source /etc/default/katastel;
+[ -f ~/.katastel ] && source ~/.katastel;
+[ -f ~/.katastel/config ] && source ~/.katastel/config;

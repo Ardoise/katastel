@@ -1,0 +1,5 @@
+# Remove empty lines:
+grep { 
+  match => [ "message", "^\s*$" ]
+  negate => true
+}

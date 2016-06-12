@@ -20,6 +20,8 @@
 
 ## Features
 * play book with Logstash
+* play book with Nifi
+* play book with Fluentd
 
 ## Requirements
 * JDK 1.7 or higher

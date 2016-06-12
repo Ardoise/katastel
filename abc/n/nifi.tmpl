@@ -28,105 +28,102 @@ PROGNAME=$(basename "$0")
 
 
 warn() {
-    echo "${PROGNAME}: $*"
+  echo "${PROGNAME}: $*"
 }
 
 die() {
-    warn "$*"
-    exit 1
+  warn "$*"
+  exit 1
 }
 
 detectOS() {
-    # OS specific support (must be 'true' or 'false').
-    cygwin=false;
-    aix=false;
-    os400=false;
-    darwin=false;
-    case "$(uname)" in
-        CYGWIN*)
-            cygwin=true
-            ;;
-        AIX*)
-            aix=true
-            ;;
-        OS400*)
-            os400=true
-            ;;
-        Darwin)
-            darwin=true
-            ;;
-    esac
-    # For AIX, set an environment variable
-    if ${aix}; then
-         export LDR_CNTRL=MAXDATA=0xB0000000@DSA
-         echo ${LDR_CNTRL}
-    fi
+  # OS specific support (must be 'true' or 'false').
+  cygwin=false;
+  aix=false;
+  os400=false;
+  darwin=false;
+  case "$(uname)" in
+      CYGWIN*)
+          cygwin=true
+          ;;
+      AIX*)
+          aix=true
+          ;;
+      OS400*)
+          os400=true
+          ;;
+      Darwin)
+          darwin=true
+          ;;
+  esac
+  # For AIX, set an environment variable
+  if ${aix}; then
+       export LDR_CNTRL=MAXDATA=0xB0000000@DSA
+       echo ${LDR_CNTRL}
+  fi
 }
 
 unlimitFD() {
-    # Use the maximum available, or set MAX_FD != -1 to use that
-    if [ "x${MAX_FD}" = "x" ]; then
-        MAX_FD="maximum"
-    fi
+  # Use the maximum available, or set MAX_FD != -1 to use that
+  if [ "x${MAX_FD}" = "x" ]; then
+      MAX_FD="maximum"
+  fi
 
-    # Increase the maximum file descriptors if we can
-    if [ "${os400}" = "false" ] && [ "${cygwin}" = "false" ]; then
-        MAX_FD_LIMIT=$(ulimit -H -n)
-        if [ "${MAX_FD_LIMIT}" != 'unlimited' ]; then
-            if [ $? -eq 0 ]; then
-                if [ "${MAX_FD}" = "maximum" -o "${MAX_FD}" = "max" ]; then
-                    # use the system max
-                    MAX_FD="${MAX_FD_LIMIT}"
-                fi
+  # Increase the maximum file descriptors if we can
+  if [ "${os400}" = "false" ] && [ "${cygwin}" = "false" ]; then
+      MAX_FD_LIMIT=$(ulimit -H -n)
+      if [ "${MAX_FD_LIMIT}" != 'unlimited' ]; then
+          if [ $? -eq 0 ]; then
+              if [ "${MAX_FD}" = "maximum" -o "${MAX_FD}" = "max" ]; then
+                  # use the system max
+                  MAX_FD="${MAX_FD_LIMIT}"
+              fi
 
-                ulimit -n ${MAX_FD} > /dev/null
-                # echo "ulimit -n" `ulimit -n`
-                if [ $? -ne 0 ]; then
-                    warn "Could not set maximum file descriptor limit: ${MAX_FD}"
-                fi
-            else
-                warn "Could not query system maximum file descriptor limit: ${MAX_FD_LIMIT}"
-            fi
-        fi
-    fi
+              ulimit -n ${MAX_FD} > /dev/null
+              # echo "ulimit -n" `ulimit -n`
+              if [ $? -ne 0 ]; then
+                  warn "Could not set maximum file descriptor limit: ${MAX_FD}"
+              fi
+          else
+              warn "Could not query system maximum file descriptor limit: ${MAX_FD_LIMIT}"
+          fi
+      fi
+  fi
 }
 
-
-
 locateJava() {
-    # Setup the Java Virtual Machine
-    if $cygwin ; then
-        [ -n "${JAVA}" ] && JAVA=$(cygpath --unix "${JAVA}")
-        [ -n "${JAVA_HOME}" ] && JAVA_HOME=$(cygpath --unix "${JAVA_HOME}")
-    fi
+  # Setup the Java Virtual Machine
+  if $cygwin ; then
+      [ -n "${JAVA}" ] && JAVA=$(cygpath --unix "${JAVA}")
+      [ -n "${JAVA_HOME}" ] && JAVA_HOME=$(cygpath --unix "${JAVA_HOME}")
+  fi
 
-    if [ "x${JAVA}" = "x" ] && [ -r /etc/gentoo-release ] ; then
-        JAVA_HOME=$(java-config --jre-home)
-    fi
-    if [ "x${JAVA}" = "x" ]; then
-        if [ "x${JAVA_HOME}" != "x" ]; then
-            if [ ! -d "${JAVA_HOME}" ]; then
-                die "JAVA_HOME is not valid: ${JAVA_HOME}"
-            fi
-            JAVA="${JAVA_HOME}/bin/java"
-        else
-            warn "JAVA_HOME not set; results may vary"
-            JAVA=$(type java)
-            JAVA=$(expr "${JAVA}" : '.* \(/.*\)$')
-            if [ "x${JAVA}" = "x" ]; then
-                die "java command not found"
-            fi
-        fi
-    fi
-    # if command is env, attempt to add more to the classpath
-    if [ "$1" = "env" ]; then
-        [ "x${TOOLS_JAR}" =  "x" ] && [ -n "${JAVA_HOME}" ] && TOOLS_JAR=$(find -H "${JAVA_HOME}" -name "tools.jar")
-        [ "x${TOOLS_JAR}" =  "x" ] && [ -n "${JAVA_HOME}" ] && TOOLS_JAR=$(find -H "${JAVA_HOME}" -name "classes.jar")
-        if [ "x${TOOLS_JAR}" =  "x" ]; then
-             warn "Could not locate tools.jar or classes.jar. Please set manually to avail all command features."
-        fi
-    fi
-
+  if [ "x${JAVA}" = "x" ] && [ -r /etc/gentoo-release ] ; then
+      JAVA_HOME=$(java-config --jre-home)
+  fi
+  if [ "x${JAVA}" = "x" ]; then
+      if [ "x${JAVA_HOME}" != "x" ]; then
+          if [ ! -d "${JAVA_HOME}" ]; then
+              die "JAVA_HOME is not valid: ${JAVA_HOME}"
+          fi
+          JAVA="${JAVA_HOME}/bin/java"
+      else
+          warn "JAVA_HOME not set; results may vary"
+          JAVA=$(type java)
+          JAVA=$(expr "${JAVA}" : '.* \(/.*\)$')
+          if [ "x${JAVA}" = "x" ]; then
+              die "java command not found"
+          fi
+      fi
+  fi
+  # if command is env, attempt to add more to the classpath
+  if [ "$1" = "env" ]; then
+      [ "x${TOOLS_JAR}" =  "x" ] && [ -n "${JAVA_HOME}" ] && TOOLS_JAR=$(find -H "${JAVA_HOME}" -name "tools.jar")
+      [ "x${TOOLS_JAR}" =  "x" ] && [ -n "${JAVA_HOME}" ] && TOOLS_JAR=$(find -H "${JAVA_HOME}" -name "classes.jar")
+      if [ "x${TOOLS_JAR}" =  "x" ]; then
+           warn "Could not locate tools.jar or classes.jar. Please set manually to avail all command features."
+      fi
+  fi
 }
 
 init() {
