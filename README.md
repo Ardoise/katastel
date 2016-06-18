@@ -6,8 +6,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-# Kata ETL Search [![Build Status]()]()
-[![Build Status](https://img.shields.io/badge/katascript-build-blue.svg)](https://github.com/Ardoise/katastel)
+# Kata ETL Search [![Build Status](https://img.shields.io/badge/katascript-build-blue.svg)](https://github.com/Ardoise/katastel)
 
 ## Table of Contents
 
